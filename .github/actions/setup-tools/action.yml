@@ -13,6 +13,6 @@ runs:
 
   - name: Install python tools
     run: |
-      pip install --require-hashes -r requirements.txt
+      pip install -r requirements.txt
       asdf reshim
     shell: bash
