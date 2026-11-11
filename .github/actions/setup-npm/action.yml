@@ -3,7 +3,7 @@ description: Setup required NPM packages
 runs:
   using: composite
   steps:
-  - name: Setup NPM
-    run: |
-      bun install
-    shell: bash
+    - name: Setup NPM
+      run: |
+        bun install
+      shell: bash

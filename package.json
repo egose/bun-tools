@@ -5,7 +5,7 @@
     "format": "bun fmt",
     "format:check": "bun fmt --check",
     "typecheck": "bun check",
-    "changelog": "bun run scripts/changelog.ts"
+    "changelog": "repo-toolkit-changelog"
   },
   "workspaces": [
     "tools/*"
