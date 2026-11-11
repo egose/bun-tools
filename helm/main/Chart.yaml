@@ -5,7 +5,8 @@ type: application
 version: 0.1.0
 appVersion: '0.1.0'
 dependencies:
-  - name: relay
+  - name: bun-relay
+    alias: relay
     version: '0.1.0'
-    repository: 'file://../_relay'
+    repository: 'file://../relay'
     condition: relay.enabled

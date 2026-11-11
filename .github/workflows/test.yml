@@ -53,6 +53,6 @@ jobs:
           for dockerfile in "${dockerfiles[@]}"; do
             tool=$(basename "$(dirname "$dockerfile")")
             echo "::group::docker build $tool"
-            docker build -t "bun-tools-$tool:ci" "$(dirname "$dockerfile")"
+            docker build -t "bun-$tool:ci" "$(dirname "$dockerfile")"
             echo "::endgroup::"
           done

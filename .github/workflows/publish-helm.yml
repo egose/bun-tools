@@ -1,0 +1,71 @@
+name: Publish Helm chart
+
+on:
+  push:
+    tags:
+      - v*.*.*
+
+env:
+  OCI_REGISTRY: ghcr.io
+  CHART_REPOSITORY: oci://ghcr.io/egose/charts
+  CHART_PATH: helm/relay
+  CHART_NAME: bun-relay
+
+concurrency:
+  group: publish-helm-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Derive chart version
+        id: release
+        run: |
+          version=${RELEASE_TAG#v}
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
+            echo "Tag $RELEASE_TAG is not SemVer, refusing to publish chart" >&2
+            exit 1
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+      - name: Login to GitHub Container Registry
+        run: |
+          printf '%s' "$REGISTRY_PASSWORD" | helm registry login "$OCI_REGISTRY" --username "$REGISTRY_USERNAME" --password-stdin
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package and push chart
+        run: |
+          sed -i -E "s/^version: .*/version: ${VERSION}/; s/^appVersion: .*/appVersion: ${VERSION}/" "${CHART_PATH}/Chart.yaml"
+          helm lint "${CHART_PATH}"
+          helm package "${CHART_PATH}" --destination /tmp/charts
+          helm push "/tmp/charts/${CHART_NAME}-${VERSION}.tgz" "${CHART_REPOSITORY}"
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+
+      - name: Verify published chart
+        run: |
+          mkdir -p /tmp/verify
+          helm pull "${CHART_REPOSITORY}/${CHART_NAME}" --version "${VERSION}" --destination /tmp/verify
+          helm show chart "/tmp/verify/${CHART_NAME}-${VERSION}.tgz"
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
