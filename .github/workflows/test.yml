@@ -17,42 +17,42 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
 
-    - name: Setup Tools
-      uses: ./.github/actions/setup-tools
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
 
-    - name: Setup NPM Packages
-      uses: ./.github/actions/setup-npm
+      - name: Setup NPM Packages
+        uses: ./.github/actions/setup-npm
 
-    - name: Format check
-      run: bun run format:check
+      - name: Format check
+        run: bun run format:check
 
-    - name: Typecheck
-      run: bun run typecheck
+      - name: Typecheck
+        run: bun run typecheck
 
   docker-build:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
 
-    - name: Build tool images
-      run: |
-        set -euo pipefail
-        shopt -s nullglob
-        dockerfiles=(tools/*/Dockerfile)
-        if [[ ${#dockerfiles[@]} -eq 0 ]]; then
-          echo "no tool Dockerfiles found under tools/*/" >&2
-          exit 1
-        fi
-        for dockerfile in "${dockerfiles[@]}"; do
-          tool=$(basename "$(dirname "$dockerfile")")
-          echo "::group::docker build $tool"
-          docker build -t "bun-tools-$tool:ci" "$(dirname "$dockerfile")"
-          echo "::endgroup::"
-        done
+      - name: Build tool images
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dockerfiles=(tools/*/Dockerfile)
+          if [[ ${#dockerfiles[@]} -eq 0 ]]; then
+            echo "no tool Dockerfiles found under tools/*/" >&2
+            exit 1
+          fi
+          for dockerfile in "${dockerfiles[@]}"; do
+            tool=$(basename "$(dirname "$dockerfile")")
+            echo "::group::docker build $tool"
+            docker build -t "bun-tools-$tool:ci" "$(dirname "$dockerfile")"
+            echo "::endgroup::"
+          done
