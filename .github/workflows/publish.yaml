@@ -12,7 +12,7 @@ on:
 
 env:
   DOCKER_REGISTRY: ghcr.io
-  IMAGE_PREFIX: egose/bun-tools
+  IMAGE_PREFIX: egose/bun
 
 jobs:
   discover-tools:

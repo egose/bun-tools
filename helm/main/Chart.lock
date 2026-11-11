@@ -1,6 +1,6 @@
 dependencies:
-- name: relay
-  repository: file://../_relay
+- name: bun-relay
+  repository: file://../relay
   version: 0.1.0
-digest: sha256:ec3a1b602427c093a018f3f28de1ea513af3afce85c5b6e86e15311859ab51fe
-generated: "2026-11-11T13:08:27.634574582-08:00"
+digest: sha256:b765f00ff2c3461eb5b01106d22df2586e5e458092cef41743eaba97768b9c4c
+generated: "2026-11-11T14:53:48.333175245-08:00"
