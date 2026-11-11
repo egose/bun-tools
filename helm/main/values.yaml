@@ -1,0 +1,51 @@
+# See https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
+global:
+  env:
+    "Env": ""
+  security:
+    allowInsecureImages: false
+  serviceAccountName:
+  imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+relay:
+  enabled: true
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+
+  nameOverride: ''
+
+  resources:
+    requests:
+      cpu: 50m          # 0.05 CPU core
+      memory: 64Mi      # 64 MB RAM
+    limits:
+      cpu: 250m         # 0.25 CPU core
+      memory: 256Mi     # 256 MB RAM
+
+  # Relay is configured through environment variables; UPSTREAM is required
+  # (the container exits at startup without it). Prefer envSecretName for
+  # anything sensitive so credentials never live in chart values.
+  env:
+    UPSTREAM: ''
+
+  envSecretName: ''
+
+networkPolicy:
+  enabled: true
+  allowSameNamespace: false
+  allowOpenShiftIngress: false
+  dns:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: kube-system
+    podSelector:
+      matchLabels:
+        k8s-app: kube-dns
+  relay:
+    ingressFrom: []
+    idpEgressIpBlocks: []
+    extraEgress: []

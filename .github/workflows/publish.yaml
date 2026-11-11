@@ -1,0 +1,122 @@
+name: Publish Docker images
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      tag_name:
+        required: true
+        type: string
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_PREFIX: egose/bun-tools
+
+jobs:
+  discover-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tools: ${{ steps.tools.outputs.tools }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+
+    - name: Discover tools with a Dockerfile
+      id: tools
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        tools=()
+        for dockerfile in tools/*/Dockerfile; do
+          tools+=("$(basename "$(dirname "$dockerfile")")")
+        done
+        if [[ ${#tools[@]} -eq 0 ]]; then
+          echo "no tool Dockerfiles found under tools/*/" >&2
+          exit 1
+        fi
+        printf 'tools=%s\n' "$(printf '%s\n' "${tools[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  build-push:
+    needs: discover-tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+      attestations: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.discover-tools.outputs.tools) }}
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ inputs.ref }}
+        fetch-depth: 0
+        fetch-tags: true
+        persist-credentials: false
+
+    - name: Validate release tag and source commit
+      run: ./scripts/validate-release-tag.sh "$RELEASE_TAG"
+      env:
+        RELEASE_TAG: ${{ inputs.tag_name }}
+
+    - name: Derive image version and revision
+      id: release
+      run: |
+        version=${RELEASE_TAG#v}
+        image_version=${version//+/_}
+        core=${version%%[-+]*}
+        major=${core%%.*}
+        remainder=${core#*.}
+        minor=${remainder%%.*}
+        stable=true
+        [[ "${version%%+*}" != *-* ]] || stable=false
+        {
+          printf 'version=%s\n' "$version"
+          printf 'image-version=%s\n' "$image_version"
+          printf 'major=%s\n' "$major"
+          printf 'minor=%s\n' "$minor"
+          printf 'stable=%s\n' "$stable"
+          printf 'revision=%s\n' "$(git rev-parse HEAD)"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        RELEASE_TAG: ${{ inputs.tag_name }}
+
+    - name: Build, scan, and publish verified image
+      uses: egose/actions/docker-build-push@71efad841d4b7bb6a479984abacf7111ebd44a16
+      env:
+        RELEASE_TAG: ${{ inputs.tag_name }}
+        REVISION: ${{ steps.release.outputs.revision }}
+        VERSION: ${{ steps.release.outputs.version }}
+      with:
+        registry-url: ${{ env.DOCKER_REGISTRY }}
+        registry-username: ${{ github.actor }}
+        registry-password: ${{ secrets.GITHUB_TOKEN }}
+        image-name: ${{ env.IMAGE_PREFIX }}-${{ matrix.tool }}
+        metadata-tags: |
+          type=raw,value=latest
+          type=raw,value=${{ steps.release.outputs.image-version }}
+          type=raw,value=${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }},enable=${{ steps.release.outputs.stable }}
+          type=raw,value=${{ steps.release.outputs.major }},enable=${{ steps.release.outputs.stable }}
+        metadata-labels: |
+          org.opencontainers.image.version=${{ inputs.tag_name }}
+          org.opencontainers.image.revision=${{ steps.release.outputs.revision }}
+        docker-context: tools/${{ matrix.tool }}
+        docker-file: tools/${{ matrix.tool }}/Dockerfile
+        publish-mode: gated
+        trivy: 'true'
+        trivy-severity: CRITICAL
+        trivy-ignore-unfixed: 'true'
+        sbom: 'true'
+        attest-provenance: 'true'
+        attest-sbom: 'true'
+        attest-create-storage-record: 'false'

@@ -1,0 +1,26 @@
+{
+  "name": "bun-tools",
+  "private": true,
+  "scripts": {
+    "format": "bun fmt",
+    "format:check": "bun fmt --check",
+    "typecheck": "bun check",
+    "changelog": "bun run scripts/changelog.ts"
+  },
+  "workspaces": [
+    "tools/*"
+  ],
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@commitlint/format": "^21.2.3",
+    "@release-it/bumper": "^8.0.1",
+    "@repo-toolkit/changelog": "^0.14.0",
+    "@types/bun": "^1.4.4",
+    "release-it": "^21.1.2",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}

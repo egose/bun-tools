@@ -1,0 +1,45 @@
+global:
+  env:
+    Env: dev
+
+relay:
+  enabled: true
+  replicaCount: 2
+
+  # Relay reads its configuration from environment variables. UPSTREAM is
+  # required; the container exits at startup without it.
+  env:
+    UPSTREAM: https://api.example.invalid
+
+  # Alternative to env above for anything sensitive: reference a pre-created
+  # Secret (rendered as envFrom). Create it out of band, e.g.:
+  #   kubectl create secret generic relay-env \
+  #     --from-literal=UPSTREAM='https://api.example.invalid' \
+  #     --from-literal=AUTH_TOKEN='secret'
+  # envSecretName: relay-env # pragma: allowlist secret
+
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: relay
+
+# Generic Kubernetes Ingress is configured through the app/relay subcharts.
+# relay:
+#   ingress:
+#     enabled: true
+#     hosts:
+#       - host: relay.example.invalid
+#         paths:
+#           - path: /
+#             pathType: Prefix
+
+# Standard NetworkPolicy cannot match DNS names. Add the CIDR ranges used by
+# your upstream API, and configure ingress controller sources.
+networkPolicy:
+  allowOpenShiftIngress: false
+  relay:
+    idpEgressIpBlocks:
+    - cidr: 203.0.113.10/32

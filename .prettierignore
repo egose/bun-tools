@@ -1,0 +1,3 @@
+# Helm charts contain Go templates that are not valid YAML for the formatter
+# (mirrors the `exclude: ^helm` rule in .pre-commit-config.yaml).
+helm/

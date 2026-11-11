@@ -1,0 +1,77 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "_.fullname" . }}-default-deny
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "_.fullname" . }}-relay-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.relay.nameOverride | default "relay" }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: {{ dig "service" "port" 8787 .Values.relay }}
+      from:
+        {{- if .Values.networkPolicy.allowSameNamespace }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- end }}
+        {{- if .Values.networkPolicy.allowOpenShiftIngress }}
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+        {{- end }}
+        {{- with .Values.networkPolicy.relay.ingressFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "_.fullname" . }}-relay-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.relay.nameOverride | default "relay" }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+    - to:
+        - namespaceSelector:
+            {{- toYaml .Values.networkPolicy.dns.namespaceSelector | nindent 12 }}
+          podSelector:
+            {{- toYaml .Values.networkPolicy.dns.podSelector | nindent 12 }}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- range .Values.networkPolicy.relay.idpEgressIpBlocks }}
+    - to:
+        - ipBlock:
+            {{- toYaml . | nindent 12 }}
+      ports:
+        - protocol: TCP
+          port: 443
+    {{- end }}
+    {{- with .Values.networkPolicy.relay.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  policyTypes:
+    - Egress
+{{- end }}

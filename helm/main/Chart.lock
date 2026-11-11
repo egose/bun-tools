@@ -1,0 +1,6 @@
+dependencies:
+- name: relay
+  repository: file://../_relay
+  version: 0.1.0
+digest: sha256:ec3a1b602427c093a018f3f28de1ea513af3afce85c5b6e86e15311859ab51fe
+generated: "2026-11-11T13:08:27.634574582-08:00"

@@ -1,0 +1,38 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c
+  hooks:
+  - id: check-added-large-files
+  - id: check-case-conflict
+  - id: check-executables-have-shebangs
+    files: \.bash
+  - id: check-json
+    # tsconfig.json is JSONC: bun's scaffold writes comments into it.
+    exclude: ^tsconfig\.json$
+  - id: check-vcs-permalinks
+  - id: check-yaml
+    exclude: ^helm
+  - id: check-ast
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: 4380fbb73a154b5f5624794c1c78d9719ccc860f
+  hooks:
+  - id: pretty-format-yaml
+    exclude: ^helm
+    args: [--autofix, --indent, '2']
+- repo: local
+  hooks:
+  - id: commitlint
+    name: commitlint
+    entry: .bin/commitlint.sh
+    language: script
+    verbose: true
+    pass_filenames: false
+    stages: [commit-msg]
+
+exclude: |
+  (?x)^(
+    CHANGELOG\.md |
+    (.*/)?bun\.lock |
+  )$
