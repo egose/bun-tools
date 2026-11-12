@@ -38,6 +38,7 @@ serviceAccount:
 # credentials never live in chart values.
 env: {}
   # UPSTREAM: https://api.example.com
+  # ACCESS_LOG: "false" # disable per-request access logging (default: on)
 
 # Optional external Secret consumed with envFrom. Use it to provide
 # UPSTREAM or any other environment variables the upstream expects.
