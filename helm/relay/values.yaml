@@ -39,6 +39,12 @@ serviceAccount:
 env: {}
   # UPSTREAM: https://api.example.com
   # ACCESS_LOG: "false" # disable per-request access logging (default: on)
+  # ACCESS_LOG_HEADERS: "true" # include request headers (may contain secrets)
+  # ACCESS_LOG_BODY: "true" # include request bodies (may contain secrets)
+  # ACCESS_LOG_RESPONSE_HEADERS: "true" # include upstream response headers (may contain secrets)
+  # ACCESS_LOG_QUERY: "true" # include query strings (may contain secrets)
+  # ACCESS_LOG_BODY_MAX_BYTES: "65536" # max logged body bytes
+  # BUN_CONFIG_MAX_HTTP_REQUESTS: "512" # concurrent fetches, including SSE (default: 256)
 
 # Optional external Secret consumed with envFrom. Use it to provide
 # UPSTREAM or any other environment variables the upstream expects.
